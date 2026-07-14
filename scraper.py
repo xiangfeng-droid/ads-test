@@ -149,12 +149,22 @@ async def fetch_meta_ad_copy(page, name, keyword):
 async def main():
     logger.info("🚀 自动化爬虫脚本启动...")
     
-    # 1. 加载配置与历史状态
-    targets = load_yaml_config(TARGETS_FILE)
-    if not targets:
+# 1. 加载配置与历史状态
+    raw_targets = load_yaml_config(TARGETS_FILE)
+    if not raw_targets:
         logger.error("❌ 找不到目标配置，脚本退出。")
         return
         
+    # === 修复: 自动兼容不同的 YAML 格式 ===
+    if isinstance(raw_targets, dict) and 'competitors' in raw_targets:
+        targets = raw_targets['competitors'] # 提取 competitors 下的列表
+    elif isinstance(raw_targets, list):
+        targets = raw_targets # 已经是列表，直接用
+    else:
+        logger.error("❌ targets.yaml 格式无法识别，请检查！")
+        return
+    # =====================================
+
     history_data = load_history(HISTORY_FILE)
     all_new_data_rows = []
 
