@@ -1,0 +1,41 @@
+name: 竞品监测定时运行
+
+on:
+  schedule:
+    # 这里的 cron 表达式代表：每周一早上 8:00 (北京时间) 自动触发
+    # 因为 GitHub 使用的是 UTC 时间，比北京时间慢 8 小时，所以换算后是 UTC 时间周日 24:00 (即周一 00:00)
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # 这个配置非常重要！它允许你在网页上点击按钮“手动立即运行”测试
+
+permissions:
+  contents: write # 给予机器人“写入权限”，这样它抓完数据后才能把 CSV 文件存回你的仓库
+
+jobs:
+  run-spider:
+    runs-on: ubuntu-latest # 启动一台免费的云端 Linux 电脑
+
+    steps:
+      - name: 1. 拉取仓库代码
+        uses: actions/checkout@v4
+
+      - name: 2. 安装 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 3. 安装依赖和浏览器
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: 4. 执行爬虫脚本
+        run: python scraper.py # 运行你的主代码，会生成 raw_data.csv 和 history_urls.json
+
+      - name: 5. 将抓取到的新数据提交并保存到 GitHub 仓库
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 告诉 GitHub 机器人把新生成的 csv 和更新后的 json 记录保存下来
+          git add raw_data*.csv history_urls.json || true
+          git commit -m "自动更新竞品数据 [skip ci]" || true
+          git push || true
