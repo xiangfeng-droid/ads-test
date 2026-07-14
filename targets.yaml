@@ -1,1 +1,3 @@
-https://www.dyson.com/air-treatment/air-purifiers
+- name: "Dyson"
+  sitemap_url: "https://www.dyson.com/sitemap.xml"
+  meta_ad_keyword: "Dyson"
